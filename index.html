@@ -34,7 +34,6 @@
   tr.big td{background:var(--big);font-weight:600}
   .tables{display:grid;gap:10px;align-items:start}
   .total{margin-top:10px;padding:8px 10px;background:#efe9de;border-radius:6px;font-size:14px}
-  .cap{padding:28px!important}.cap .sum{grid-template-columns:repeat(4,1fr)!important}.cap .info{grid-template-columns:1fr 1fr!important}
   .note{font-size:11px;color:var(--mute);margin-top:6px}
   .sum div{background:#faf7f1}
   .sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:36px;font-size:13px}
@@ -89,9 +88,7 @@
     </div>
     <div class="warn" id="warn"></div>
     <div class="btns">
-      <button onclick="sendImage()" id="btnImg">📤 Отправить клиенту (картинка)</button>
-      <button onclick="sendWA()" style="background:#1fa855;border-color:#1fa855">WhatsApp текстом</button>
-      <button class="sec" onclick="window.print()">Печать / PDF</button>
+      <button onclick="window.print()">Печать / PDF</button>
       <button class="sec" onclick="resetForm()">Очистить клиента</button>
     </div>
   </div>
@@ -122,7 +119,6 @@
     </div>
   </div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const ids=["co","client","phone","obj","apt","area","price","down","term","base","every","mode","start","round"];
@@ -179,8 +175,6 @@ function calc(){
   const head=`<thead><tr><th>№</th><th>Дата</th><th>Вид</th><th>Сумма</th><th>Остаток</th></tr></thead>`;
   let html="";
   for(let c=0;c<cols;c++) html+=`<table>${head}<tbody>${rows.slice(c*per,(c+1)*per).join("")}</tbody></table>`;
-  const L=sched[sched.length-1];
-  last={price,down,term,base,every,mode,big:(mode==="add"?base:0)+Math.max(share,0),first:fmtD(start),lastDate:fmtD(addMonths(start,term-1)),lastAmt:L.amt};
   $("tables").style.gridTemplateColumns=`repeat(${cols},1fr)`;
   $("tables").innerHTML=html;
   // высота строки при печати: таблицы заполняют лист (≈150 мм под таблицу)
@@ -190,33 +184,6 @@ function calc(){
   $("total").innerHTML=`ИТОГО к оплате: <b>${fmt(price)} сом</b> &nbsp;·&nbsp; платежей: ${sched.length}${down>0?" + первый взнос":""} &nbsp;·&nbsp; срок ${term} мес.`;
   $("warn").style.display=warn.length?"block":"none";$("warn").innerHTML=warn.join("<br>");
   try{const s={};ids.forEach(k=>s[k]=$(k).value);localStorage.setItem("nobel-plan",JSON.stringify(s))}catch(e){}
-}
-let last={};
-function waNumber(){let d=$("phone").value.replace(/\D/g,"");if(d.startsWith("0"))d="996"+d.slice(1);else if(d.length===9)d="996"+d;return d}
-function summaryText(){
-  const s=last,c=$("client").value;
-  return `${c?c+", з":"З"}дравствуйте! Ваш график рассрочки${$("obj").value?" — "+$("obj").value:""}${$("apt").value?", кв. "+$("apt").value:""}:\n\n`+
-  `Стоимость: ${fmt(s.price)} сом\n`+(s.down>0?`Первый взнос: ${fmt(s.down)} сом\n`:"")+
-  `Срок: ${s.term} мес.\n`+
-  (s.mode==="add"||s.base?`Ежемесячно: ${fmt(s.base)} сом\n`:"")+
-  `Каждый ${s.every}-й месяц: ${fmt(s.big)} сом\n`+
-  `Первый платёж: ${s.first}\nПоследний платёж: ${s.lastDate} — ${fmt(s.lastAmt)} сом\n\n`+
-  `Полный график по месяцам отправим картинкой.`;
-}
-function sendWA(){const n=waNumber();window.open(`https://wa.me/${n}?text=${encodeURIComponent(summaryText())}`,"_blank")}
-async function sendImage(){
-  const b=$("btnImg"),t=b.textContent;b.textContent="Готовлю…";b.disabled=true;
-  try{
-    const box=document.createElement("div");box.style.cssText="position:fixed;left:-10000px;top:0;width:820px;background:#fff";
-    const cl=document.querySelector(".sheet").cloneNode(true);cl.style.border="0";cl.classList.add("cap");box.appendChild(cl);document.body.appendChild(box);
-    const cv=await html2canvas(cl,{scale:2,backgroundColor:"#fff",windowWidth:820});box.remove();
-    const blob=await new Promise(r=>cv.toBlob(r,"image/png"));
-    const name=`График_${($("client").value||"рассрочка").replace(/\s+/g,"_")}.png`;
-    const file=new File([blob],name,{type:"image/png"});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:summaryText()})}
-    else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();alert("Картинка скачана — прикрепите её в WhatsApp клиенту.")}
-  }catch(e){if(e.name!=="AbortError")alert("Не получилось: "+e.message)}
-  b.textContent=t;b.disabled=false;
 }
 function resetForm(){["client","phone","apt","area"].forEach(k=>$(k).value="");calc()}
 try{const s=JSON.parse(localStorage.getItem("nobel-plan")||"null");if(s)ids.forEach(k=>{if(s[k]!=null)$(k).value=s[k]})}catch(e){}
