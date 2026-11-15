@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>График рассрочки</title>
+<style>
+  :root{--ink:#1d1b18;--mute:#6b665e;--line:#d9d3c7;--acc:#8a6a2f;--bg:#f6f3ee;--card:#fff;--big:#f3ead8}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI",Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 60px}
+  h1{font-size:22px;margin:0 0 14px}
+  .form{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px 16px}
+  label{display:flex;flex-direction:column;font-size:12px;color:var(--mute);gap:4px}
+  input,select{font:inherit;color:var(--ink);padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff}
+  .btns{display:flex;gap:10px;margin:14px 0;flex-wrap:wrap}
+  button{font:inherit;padding:10px 18px;border-radius:6px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer}
+  button.sec{background:#fff;color:var(--acc)}
+  .warn{background:#fde8e6;border:1px solid #e6a59d;color:#8a2a1f;padding:10px 12px;border-radius:6px;margin:10px 0;display:none}
+  .sheet{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:28px}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--acc);padding-bottom:10px;margin-bottom:14px;gap:12px}
+  .co{font-size:22px;font-weight:700;letter-spacing:.08em;color:var(--acc)}
+  .doc{text-align:right;font-size:13px;color:var(--mute)}
+  .info{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;font-size:14px;margin-bottom:14px}
+  .info b{font-weight:600}
+  .sum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+  .sum div{border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+  .sum span{display:block;font-size:11px;color:var(--mute)}
+  .sum b{font-size:16px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:5px 8px;text-align:right}
+  th{background:#efe9de;font-weight:600}
+  td:nth-child(-n+3),th:nth-child(-n+3){text-align:left}
+  tr.big td{background:var(--big);font-weight:600}
+  .tables{display:grid;gap:10px;align-items:start}
+  .total{margin-top:10px;padding:8px 10px;background:#efe9de;border-radius:6px;font-size:14px}
+  .note{font-size:11px;color:var(--mute);margin-top:6px}
+  .sum div{background:#faf7f1}
+  .sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:36px;font-size:13px}
+  .sign div{color:var(--mute)}
+  @media (max-width:640px){.info,.sum{grid-template-columns:1fr 1fr}.sheet{padding:14px}}
+  @media print{
+    @page{size:A4;margin:10mm}
+    body{background:#fff;font-size:11px}
+    .sheet{height:276mm;display:flex;flex-direction:column;overflow:hidden;page-break-inside:avoid}
+    .head{padding-bottom:3mm;margin-bottom:4mm}
+    .co{font-size:26px}
+    .doc{font-size:12px}
+    .info{font-size:13px;margin-bottom:4mm;gap:1.5mm 24px}
+    .sum{margin-bottom:5mm}.sum div{padding:2mm 3mm}.sum span{font-size:10px}.sum b{font-size:15px}
+    .sum div,.total{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    table{font-size:var(--fs,11px)}
+    th,td{padding:0 5px;height:var(--rh,6mm)}
+    .total{font-size:13px;padding:2.5mm 3mm;margin-top:4mm}
+    .note{display:block}
+    .sign{margin-top:auto;font-size:12px;padding-top:10mm}
+    .wrap{padding:0;max-width:none}
+    .noprint{display:none!important}
+    .sheet{border:0;padding:0}
+    tr{break-inside:avoid}
+    tr.big td{background:var(--big)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    th,tr.tot td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="noprint">
+    <h1>График гибкой рассрочки</h1>
+    <div class="form">
+      <label>Компания<input id="co" value="NOBEL"></label>
+      <label>ФИО клиента<input id="client" placeholder="Иванов Иван"></label>
+      <label>Телефон клиента<input id="phone" placeholder="+996 ..."></label>
+      <label>Объект (ЖК)<input id="obj" value="ЖК Nobel"></label>
+      <label>№ квартиры<input id="apt"></label>
+      <label>Площадь, м²<input id="area" type="number" step="0.01"></label>
+      <label>Стоимость квартиры, сом<input id="price" type="number" value="6000000"></label>
+      <label>Первый взнос, сом<input id="down" type="number" value="0"></label>
+      <label>Срок, месяцев<input id="term" type="number" value="36" min="1"></label>
+      <label>Ежемесячный платёж, сом<input id="base" type="number" value="100000"></label>
+      <label>Крупный платёж каждый
+        <select id="every"><option value="2">2-й месяц</option><option value="3" selected>3-й месяц</option><option value="6">6-й месяц</option></select></label>
+      <label>В месяц крупного платежа
+        <select id="mode"><option value="add">ежемесячный + доля остатка</option><option value="replace">только доля остатка</option></select></label>
+      <label>Дата первого платежа<input id="start" type="date"></label>
+      <label>Округлять до, сом
+        <select id="round"><option value="1">1</option><option value="100">100</option><option value="1000" selected>1 000</option><option value="10000">10 000</option></select></label>
+    </div>
+    <div class="warn" id="warn"></div>
+    <div class="btns">
+      <button onclick="window.print()">Печать / PDF</button>
+      <button class="sec" onclick="resetForm()">Очистить клиента</button>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="head">
+      <div class="co" id="pCo"></div>
+      <div class="doc">ГРАФИК ПЛАТЕЖЕЙ ПО РАССРОЧКЕ<br>от <span id="pDate"></span></div>
+    </div>
+    <div class="info">
+      <div>Клиент: <b id="pClient"></b></div>
+      <div>Телефон: <b id="pPhone"></b></div>
+      <div>Объект: <b id="pObj"></b></div>
+      <div>Квартира №: <b id="pApt"></b> <span id="pArea"></span></div>
+    </div>
+    <div class="sum">
+      <div><span>Стоимость</span><b id="sPrice"></b></div>
+      <div><span>Первый взнос</span><b id="sDown"></b></div>
+      <div><span>Ежемесячно</span><b id="sBase"></b></div>
+      <div><span id="sBigL">Крупный платёж</span><b id="sBig"></b></div>
+    </div>
+    <div class="tables" id="tables"></div>
+    <div class="total" id="total"></div>
+    <div class="note">Платёж вносится не позднее указанной даты. Выделенные строки — крупные платежи. Досрочное погашение возможно в любой момент.</div>
+    <div class="sign">
+      <div>Продавец: ______________________ / подпись</div>
+      <div>Покупатель: ______________________ / подпись</div>
+    </div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const ids=["co","client","phone","obj","apt","area","price","down","term","base","every","mode","start","round"];
+const fmt=n=>Math.round(n).toLocaleString("ru-RU").replace(/,/g," ");
+const fmtD=d=>d.toLocaleDateString("ru-RU");
+function addMonths(d,m){const r=new Date(d.getFullYear(),d.getMonth()+m,1);const last=new Date(r.getFullYear(),r.getMonth()+1,0).getDate();r.setDate(Math.min(d.getDate(),last));return r}
+function num(id){return parseFloat($(id).value)||0}
+
+function calc(){
+  const price=num("price"),down=num("down"),term=Math.max(1,Math.floor(num("term"))),base=num("base"),every=+$("every").value,mode=$("mode").value,R=+$("round").value;
+  const start=$("start").value?new Date($("start").value+"T00:00"):new Date();
+  const warn=[];
+  let debt=price-down;
+  const bigIdx=[];for(let i=1;i<=term;i++) if(i%every===0) bigIdx.push(i);
+  if(!bigIdx.length) bigIdx.push(term);
+  const regularCount = mode==="add" ? term : term-bigIdx.length;
+  const rest = debt - base*regularCount;
+  let share = Math.floor(rest/bigIdx.length/R)*R;
+  if(rest<0) warn.push(`Ежемесячные платежи (${fmt(base*regularCount)}) уже больше долга. Уменьшите срок или ежемесячный платёж.`);
+  const sched=[];
+  for(let i=1;i<=term;i++){
+    const isBig=bigIdx.includes(i);
+    let amt = isBig ? (mode==="add"?base:0)+Math.max(share,0) : base;
+    sched.push({i,isBig,amt});
+  }
+  // последний платёж закрывает остаток копейка в копейку
+  const paid=sched.reduce((s,r)=>s+r.amt,0);
+  const diff=debt-paid; sched[sched.length-1].amt+=diff;
+  if(sched[sched.length-1].amt<0) warn.push("Последний платёж получился отрицательным — проверьте параметры.");
+
+  // вывод
+  $("pCo").textContent=$("co").value;
+  $("pDate").textContent=fmtD(new Date());
+  $("pClient").textContent=$("client").value||"—";
+  $("pPhone").textContent=$("phone").value||"—";
+  $("pObj").textContent=$("obj").value||"—";
+  $("pApt").textContent=$("apt").value||"—";
+  $("pArea").textContent=$("area").value?`(${$("area").value} м²)`:"";
+  $("sPrice").textContent=fmt(price)+" с";
+  $("sDown").textContent=fmt(down)+" с";
+  $("sBase").textContent=mode==="add"||every? fmt(base)+" с":"";
+  $("sBigL").textContent=`Каждый ${every}-й месяц`;
+  $("sBig").textContent=fmt((mode==="add"?base:0)+Math.max(share,0))+" с";
+
+  const rows=[];let bal=debt;
+  if(down>0) rows.push(`<tr class="big"><td>0</td><td>${fmtD(new Date())}</td><td>Взнос</td><td>${fmt(down)}</td><td>${fmt(debt)}</td></tr>`);
+  for(const r of sched){
+    bal-=r.amt;
+    const d=addMonths(start,r.i-1);
+    const kind=r.isBig?"Крупный":"Ежемес.";
+    rows.push(`<tr class="${r.isBig?"big":""}"><td>${r.i}</td><td>${fmtD(d)}</td><td>${kind}</td><td>${fmt(r.amt)}</td><td>${fmt(Math.max(bal,0))}</td></tr>`);
+  }
+  const cols=rows.length>48?3:2, per=Math.ceil(rows.length/cols);
+  const head=`<thead><tr><th>№</th><th>Дата</th><th>Вид</th><th>Сумма</th><th>Остаток</th></tr></thead>`;
+  let html="";
+  for(let c=0;c<cols;c++) html+=`<table>${head}<tbody>${rows.slice(c*per,(c+1)*per).join("")}</tbody></table>`;
+  $("tables").style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  $("tables").innerHTML=html;
+  // высота строки при печати: таблицы заполняют лист (≈150 мм под таблицу)
+  const rh=Math.min(9.6,Math.max(3.6,182/(per+1)));
+  document.documentElement.style.setProperty("--rh",rh.toFixed(2)+"mm");
+  document.documentElement.style.setProperty("--fs",Math.min(13,Math.max(8,rh*1.65)).toFixed(1)+"px");
+  $("total").innerHTML=`ИТОГО к оплате: <b>${fmt(price)} сом</b> &nbsp;·&nbsp; платежей: ${sched.length}${down>0?" + первый взнос":""} &nbsp;·&nbsp; срок ${term} мес.`;
+  $("warn").style.display=warn.length?"block":"none";$("warn").innerHTML=warn.join("<br>");
+  try{const s={};ids.forEach(k=>s[k]=$(k).value);localStorage.setItem("nobel-plan",JSON.stringify(s))}catch(e){}
+}
+function resetForm(){["client","phone","apt","area"].forEach(k=>$(k).value="");calc()}
+try{const s=JSON.parse(localStorage.getItem("nobel-plan")||"null");if(s)ids.forEach(k=>{if(s[k]!=null)$(k).value=s[k]})}catch(e){}
+if(!$("start").value)$("start").value=new Date().toISOString().slice(0,10);
+ids.forEach(k=>{$(k).addEventListener("input",calc);$(k).addEventListener("change",calc)});
+calc();
+</script>
+</body>
+</html>
